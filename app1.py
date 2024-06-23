@@ -11,7 +11,7 @@ with open('scaler.pkl', 'rb') as f:
     scaler = pickle.load(f)
 
 # Đọc dữ liệu từ file CSV
-data = pd.read_csv('stock_data.csv')
+data = pd.read_csv('_Dữ_liệu_giao_dịch_ngày__202406152152.csv')
 
 # Chọn các đặc trưng quan trọng
 features = ['Mở cửa', 'Đóng cửa', 'Cao nhất', 'Thấp nhất', 'Trung bình', 'GD khớp lệnh KL']
