@@ -6,7 +6,7 @@ import pickle
 from tensorflow.keras.models import load_model
 
 # Load mô hình và scaler
-model = load_model('lstm_model.h5')
+model = load_model('my_model.keras')
 with open('scaler.pkl', 'rb') as f:
     scaler = pickle.load(f)
 
