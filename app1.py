@@ -18,7 +18,7 @@ def predict_next_close(stock_data, seq_length, model, features, scaler):
 st.title('Dự đoán giá cổ phiếu')
 
 # Tải lên mô hình
-model_file = st.file_uploader("lstm_model.h5", type="h5")
+model_file = st.file_uploader("lstm_model.pkl", type="pkl")
 scaler_file = st.file_uploader("scaler.pkl", type="pkl")
 
 if model_file is not None and scaler_file is not None:
