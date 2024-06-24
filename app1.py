@@ -22,7 +22,7 @@ model_file = st.file_uploader("lstm_model.pkl", type="pkl")
 scaler_file = st.file_uploader("scaler.pkl", type="pkl")
 
 if model_file is not None and scaler_file is not None:
-    model = load_model(model_file)
+    model = pickle.load(model_file)
     with open(scaler_file, 'rb') as f:
         scaler = pickle.load(f)
     
