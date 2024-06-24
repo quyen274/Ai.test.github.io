@@ -12,24 +12,13 @@ with open('scaler.pkl', 'rb') as f:
 
 # Đọc dữ liệu từ file CSV
 data = pd.read_csv('_Dữ_liệu_giao_dịch_ngày__202406152152.csv')
-
+data['Ngày'] = pd.to_datetime(data['Ngày'])
 # Chọn các đặc trưng quan trọng
 features = ['Mở cửa', 'Đóng cửa', 'Cao nhất', 'Thấp nhất', 'Trung bình', 'GD khớp lệnh KL']
 data = data[['Ngày', 'Mã CK'] + features]
 data = data.sort_values(by=['Mã CK', 'Ngày'])
-data[features] = scaler.transform(data[features])
-
-# Tạo chuỗi thời gian cho LSTM
-def create_sequences(data, seq_length, features):
-    sequences = []
-    for stock in data['Mã CK'].unique():
-        stock_data = data[data['Mã CK'] == stock][features].values
-        for i in range(len(stock_data) - seq_length):
-            sequences.append(stock_data[i:i+seq_length])
-    return np.array(sequences)
-
-seq_length = 60
-
+scaler = MinMaxScaler(feature_range=(0, 1))
+data[features] = scaler.fit_transform(data[features])
 # Dự đoán giá đóng cửa ngày tiếp theo
 def predict_next_close(stock_data, seq_length, model, features, scaler):
     last_sequence = stock_data[features].values[-seq_length:]
