@@ -1,51 +1,58 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
-import streamlit as st
-from sklearn.preprocessing import MinMaxScaler
 import pickle
 from tensorflow.keras.models import load_model
+from sklearn.preprocessing import MinMaxScaler
 
-# Load mô hình và scaler
-model = load_model('lstm_model.h5')
-with open('scaler.pkl', 'rb') as f:
-    scaler = pickle.load(f)
-
-# Đọc dữ liệu từ file CSV
-data = pd.read_csv('_Dữ_liệu_giao_dịch_ngày__202406152152.csv')
-data['Ngày'] = pd.to_datetime(data['Ngày'])
-# Chọn các đặc trưng quan trọng
-features = ['Mở cửa', 'Đóng cửa', 'Cao nhất', 'Thấp nhất', 'Trung bình', 'GD khớp lệnh KL']
-data = data[['Ngày', 'Mã CK'] + features]
-data = data.sort_values(by=['Mã CK', 'Ngày'])
-scaler = MinMaxScaler(feature_range=(0, 1))
-data[features] = scaler.fit_transform(data[features])
-# Dự đoán giá đóng cửa ngày tiếp theo
+# Hàm dự đoán giá tiếp theo
 def predict_next_close(stock_data, seq_length, model, features, scaler):
     last_sequence = stock_data[features].values[-seq_length:]
     last_sequence = scaler.transform(last_sequence)
-    last_sequence = np.expand_dims(last_sequence, axis=0)
+    last_sequence = np.expand_dims(last_sequence[:-1], axis=0)
     predicted_price = model.predict(last_sequence)
+    predicted_price = np.concatenate([predicted_price, np.zeros((predicted_price.shape[0], len(features)-1))], axis=1)
     predicted_price = scaler.inverse_transform(predicted_price)
     return predicted_price[0][features.index('Đóng cửa')]
 
-# Tính toán lợi nhuận dự kiến cho mỗi mã chứng khoán
-profits = {}
-for stock in data['Mã CK'].unique():
-    stock_data = data[data['Mã CK'] == stock]
-    current_price = stock_data['Đóng cửa'].values[-1]
-    predicted_price = predict_next_close(stock_data, seq_length, model, features, scaler)
-    profit = (predicted_price - current_price) / current_price
-    profits[stock] = profit
+st.title('Dự đoán giá cổ phiếu')
 
-# Chọn mã chứng khoán có lợi nhuận dự kiến cao nhất
-top_stocks = sorted(profits, key=profits.get, reverse=True)[:10]
+# Tải lên mô hình
+model_file = st.file_uploader("Tải lên mô hình lstm_model.h5", type="h5")
+scaler_file = st.file_uploader("Tải lên scaler scaler.pkl", type="pkl")
 
-# Triển khai trên Streamlit
-st.title("Stock Prediction System")
-budget = st.number_input("Enter your budget:", min_value=0, step=1000)
-
-if st.button("Get Recommendations"):
-    # Hiển thị 10 mã chứng khoán có lợi nhuận cao nhất
-    st.write("Top 10 recommended stocks:")
-    for stock in top_stocks:
-        st.write(f"Stock: {stock}, Predicted Profit: {profits[stock]:.2%}")
+if model_file is not None and scaler_file is not None:
+    model = load_model(model_file)
+    with open(scaler_file, 'rb') as f:
+        scaler = pickle.load(f)
+    
+    # Tải lên dữ liệu đầu vào
+    data_file = st.file_uploader("Tải lên dữ liệu cổ phiếu", type=["csv"])
+    
+    if data_file is not None:
+        data = pd.read_csv(data_file)
+        data['Ngày'] = pd.to_datetime(data['Ngày'])
+        features = ['Mở cửa', 'Đóng cửa', 'Cao nhất', 'Thấp nhất', 'Trung bình', 'GD khớp lệnh KL']
+        
+        # Chuẩn bị dữ liệu
+        data = data.sort_values(by=['Mã CK', 'Ngày'])
+        data[features] = scaler.transform(data[features])
+        
+        # Dự đoán và tính toán lợi nhuận
+        seq_length = 60
+        profits = {}
+        for stock in data['Mã CK'].unique():
+            stock_data = data[data['Mã CK'] == stock]
+            current_price = stock_data['Đóng cửa'].values[-1]
+            predicted_price = predict_next_close(stock_data, seq_length, model, features, scaler)
+            profit = (predicted_price - current_price) / current_price
+            profits[stock] = profit
+        
+        # In mã cổ phiếu có lợi nhuận dự đoán cao nhất
+        best_stock = max(profits, key=profits.get)
+        st.write(f"Mã cổ phiếu có lợi nhuận dự đoán cao nhất là: {best_stock} với lợi nhuận dự đoán là: {profits[best_stock]*100:.2f}%")
+        
+        # Giả sử bạn có một số tiền để đầu tư
+        investment_amount = st.number_input("Nhập số tiền đầu tư (VND):", min_value=0, value=1000000)
+        potential_profit = investment_amount * profits[best_stock]
+        st.write(f"Lợi nhuận dự đoán khi đầu tư vào {best_stock} là: {potential_profit:.2f} VND")
