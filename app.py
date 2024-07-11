@@ -52,7 +52,7 @@ seq_length=20
 profits = {}
 for stock in data['Mã CK'].unique():
     stock_data = data[data['Mã CK'] == stock]
-    current_price = stock_data['Đóng cửa'].values[-1]
+    current_price = stock_data['Đóng cửa'].values[-2]
     predicted_price = predict_next_close(stock_data, seq_length, models[stock], features, scalers[stock])
     profit = (predicted_price - current_price) / current_price
     profits[stock] = profit
