@@ -52,7 +52,7 @@ seq_length=20
 profits = {}
 for stock in data['Mã CK'].unique():
     stock_data = data[data['Mã CK'] == stock]
-    current_price = stock_data['Đóng cửa'].values[-2]
+    current_price = stock_data['Đóng cửa'].values[-3]
     predicted_price = predict_next_close(stock_data, seq_length, models[stock], features, scalers[stock])
     profit = (predicted_price - current_price) / current_price
     profits[stock] = profit
@@ -68,7 +68,7 @@ for stock, profit in sorted_profits:
 for stock, profit in sorted_profits:
     st.write(f'{stock}: Expected profit for {investment} VND is {investment * profit:.2f} VND')
 
-# Hiển thị biểu đồ dự đoán cho 10 mã CK
+# Hiển thị biểu đồ dự đoán cho 3 mã CK
 for stock, _ in sorted_profits:
     stock_data = data[data['Mã CK'] == stock]
     stock_data_scaled, scaler = prepare_data(stock_data, features)
